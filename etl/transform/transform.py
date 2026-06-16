@@ -6,27 +6,34 @@ import pandas as pd
 
 def transformar_csv(ventas):
     """
-    Limpia y transforma el dataset de ventas.
+    Limpia y transforma el dataset de ventas manejando formatos híbridos de fecha.
     """
+    # Clonamos para evitar advertencias de memoria
+    ventas = ventas.copy()
 
-    # Convertir fechas
+    # SOLUCIÓN MAESTRA: 'format="mixed"' procesa barras (1/29/14) y guiones (09-09-2015) a la vez
+    print("Digeriendo formatos mixtos de fechas (barras, guiones y años cortos)...")
+    
     ventas["Order Date"] = pd.to_datetime(
         ventas["Order Date"],
+        format="mixed",
+        dayfirst=False, # Mantiene la prioridad de mes primero para el formato de EE.UU. (1/29/14)
         errors="coerce"
     )
 
     ventas["Ship Date"] = pd.to_datetime(
         ventas["Ship Date"],
+        format="mixed",
+        dayfirst=False,
         errors="coerce"
     )
 
-    # Revisar nulos
-    print("\n===== NULOS CSV =====")
+    # Revisar nulos (¡Verás cómo este contador ahora baja a 0!)
+    print("\n===== NULOS CSV (POST-PROCESAMIENTO DE FECHAS) =====")
     print(ventas.isnull().sum())
 
     # Eliminar duplicados
     duplicados = ventas.duplicated().sum()
-
     print(f"\nDuplicados CSV: {duplicados}")
 
     ventas = ventas.drop_duplicates()
@@ -41,18 +48,19 @@ def transformar_api(feriados):
     """
     Limpia y transforma los datos obtenidos desde la API.
     """
+    if feriados is None or feriados.empty:
+        return pd.DataFrame(columns=["Fecha", "Nombre_Local", "Nombre_Feriado"])
 
-    # Convertir fecha
+    feriados = feriados.copy()
+    
     feriados["Fecha"] = pd.to_datetime(
         feriados["Fecha"],
         errors="coerce"
     )
 
-    # Revisar nulos
     print("\n===== NULOS API =====")
     print(feriados.isnull().sum())
 
-    # Eliminar duplicados
     feriados = feriados.drop_duplicates()
 
     return feriados
@@ -65,15 +73,15 @@ def transformar_sql(metas):
     """
     Limpia el dataset proveniente de MySQL.
     """
+    if metas is None or metas.empty:
+        return pd.DataFrame(columns=["id_meta", "region", "meta_ventas"])
 
-    # Eliminar espacios
+    metas = metas.copy()
     metas["region"] = metas["region"].str.strip()
 
-    # Revisar nulos
     print("\n===== NULOS MYSQL =====")
     print(metas.isnull().sum())
 
-    # Eliminar duplicados
     metas = metas.drop_duplicates()
 
     return metas
@@ -84,16 +92,14 @@ def transformar_sql(metas):
 
 def unir_ventas_feriados(ventas, feriados):
     """
-    Une las ventas con los feriados.
+    Une las ventas con los feriados utilizando la fecha como llave.
     """
-
     df = ventas.merge(
         feriados,
         left_on="Order Date",
         right_on="Fecha",
         how="left"
     )
-
     return df
 
 # =====================================================
@@ -102,16 +108,14 @@ def unir_ventas_feriados(ventas, feriados):
 
 def unir_metas(df, metas):
     """
-    Une el dataset anterior con las metas de ventas.
+    Une el dataset anterior con las metas de ventas regionales.
     """
-
     df = df.merge(
         metas,
         left_on="Region",
         right_on="region",
         how="left"
     )
-
     return df
 
 # =====================================================
@@ -120,33 +124,36 @@ def unir_metas(df, metas):
 
 def crear_variables(df):
     """
-    Crea nuevas variables para el análisis.
+    Crea nuevas variables temporales y de cumplimiento para el análisis.
+    Reemplaza los valores nulos de la API por etiquetas descriptivas.
     """
+    df = df.copy()
 
-    # Indica si la venta fue realizada en un feriado
-    df["Es_Feriado"] = (
-        df["Nombre_Feriado"].notnull()
-    )
+    # 1. REEMPLAZAR NULOS DE LA API CON UN TEXTO IDENTIFICADOR
+    # Cambiamos los vacíos (NaN) por un texto claro para tus reportes
+    df["Nombre_Feriado"] = df["Nombre_Feriado"].fillna("Día Regular / No Feriado")
+    df["Nombre_Local"] = df["Nombre_Local"].fillna("Día Regular / No Feriado")
+    
+    # Para la columna 'Fecha' de la API, si estaba vacía, le copiamos la misma fecha de la venta
+    df["Fecha"] = df["Fecha"].fillna(df["Order Date"])
 
-    # Año de la venta
-    df["Año"] = (
-        df["Order Date"].dt.year
-    )
+    # 2. CALCULAR VARIABLES (Ahora basadas en las etiquetas anteriores)
+    # 1 si es un feriado real (es decir, si el texto NO es "Día Regular / No Feriado"), 0 si es un día normal.
+    df["Es_Feriado"] = (df["Nombre_Feriado"] != "Día Regular / No Feriado").astype(int)
 
-    # Mes de la venta
-    df["Mes"] = (
-        df["Order Date"].dt.month
-    )
+    # Variables temporales extraídas de la fecha corregida
+    df["Año"] = df["Order Date"].dt.year
+    df["Mes"] = df["Order Date"].dt.month
+    df["Dia_Semana"] = df["Order Date"].dt.day_name()
 
-    # Día de la semana
-    df["Dia_Semana"] = (
-        df["Order Date"].dt.day_name()
+    # Define el estado de la meta que espera tu Data Warehouse final en MySQL
+    df["estado_meta"] = df.apply(
+        lambda row: "Cumple Meta Regional" if row["Sales"] >= row["meta_ventas"] else "Venta Regular", 
+        axis=1
     )
-
-    # Indica si la venta supera la meta regional
-    df["Cumple_Meta"] = (
-        df["Sales"] >= df["meta_ventas"]
-    )
+    
+    # Campo auxiliar booleano de control interno
+    df["Cumple_Meta"] = (df["Sales"] >= df["meta_ventas"]).astype(int)
 
     return df
 
@@ -156,13 +163,11 @@ def crear_variables(df):
 
 def revisar_transformacion(df):
     """
-    Muestra información del dataset transformado.
+    Muestra información del dataset transformado en la consola.
     """
-
     print("\n===== DATASET TRANSFORMADO =====")
-
     print("\nPrimeras filas:")
-    print(df.head())
+    print(df.head(2))
 
     print("\nDimensiones:")
     print(df.shape)
