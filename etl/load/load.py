@@ -28,7 +28,7 @@ def revisar_carga(df):
 def cargar_mysql(df):
     """
     Guarda el DataFrame transformado en la tabla
-    dw_superstore_climate de MySQL.
+   superstore_feriados_db de MySQL.
     """
 
     try:
@@ -36,7 +36,7 @@ def cargar_mysql(df):
         ruta_conexion = (
             "mysql+mysqlconnector://"
             "root:root_password@localhost:3307/"
-            "superstore_climate_db"
+            "superstore_feriados_db"
         )
 
         # Crear conexión
@@ -44,14 +44,14 @@ def cargar_mysql(df):
 
         # Insertar los datos en la tabla final
         df.to_sql(
-            name="dw_superstore_climate",
+            name="dw_superstore_c",
             con=engine,
             if_exists="append",
             index=False
         )
 
         print("\nDatos cargados correctamente en MySQL.")
-        print("Tabla destino: dw_superstore_climate")
+        print("Tabla destino:superstore_feriados_db")
 
     except Exception as e:
         print(f"\nError durante la carga: {e}")

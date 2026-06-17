@@ -108,14 +108,19 @@ def unir_ventas_feriados(ventas, feriados):
 
 def unir_metas(df, metas):
     """
-    Une el dataset anterior con las metas de ventas regionales.
+    Une el dataset anterior con las metas regionales.
     """
+
+    metas = metas.rename(columns={
+        "region": "Region"
+    })
+
     df = df.merge(
         metas,
-        left_on="Region",
-        right_on="region",
+        on="Region",
         how="left"
     )
+
     return df
 
 # =====================================================

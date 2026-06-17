@@ -106,7 +106,7 @@ def ejecutar_pipeline():
         return
 
     # ==============================================================================
-    # SOLUCIÓN AL ERROR DE COLUMNAS: Normalizar nombres para MySQL dw_superstore_climate
+    # SOLUCIÓN AL ERROR DE COLUMNAS: Normalizar nombres para MySQL superstore_feriados_db
     # ==============================================================================
     # Mapea columnas como 'Order ID' -> 'order_id', 'Product Name' -> 'product_name'
     df_desde_processed.columns = (

@@ -12,7 +12,7 @@ def leer_mysql():
         ruta_conexion = (
             "mysql+mysqlconnector://"
             "root:root_password@localhost:3307/"
-            "superstore_climate_db"
+            "superstore_feriados_db"
         )
 
         engine = create_engine(ruta_conexion)

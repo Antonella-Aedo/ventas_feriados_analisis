@@ -1,6 +1,6 @@
-CREATE DATABASE IF NOT EXISTS superstore_climate_db;
+CREATE DATABASE IF NOT EXISTS superstore_feriados_db;
 
-USE superstore_climate_db;
+USE superstore_feriados_db;
 
 -- 1. TABLA: METAS DE VENTAS (Tabla Maestra / Configuración de Negocio)
 -- DESCRIPCIÓN: 
@@ -38,7 +38,7 @@ VALUES
 -- el calendario de feriados nacionales y el estatus de cumplimiento de metas corporativas.
 -- Está optimizada para alimentar directamente las métricas y gráficos del Dashboard final.
 
-CREATE TABLE IF NOT EXISTS dw_superstore_climate (
+CREATE TABLE IF NOT EXISTS dw_superstore_feriados (
 
     id INT AUTO_INCREMENT PRIMARY KEY,
 
