@@ -51,7 +51,7 @@ def ejecutar_pipeline():
             
     df_api = pd.concat(listas_feriados, ignore_index=True) if listas_feriados else None
     
-    ruta_csv = "data/raw/Sample_ Superstore.csv"
+    ruta_csv = os.path.join(ruta_raiz, "data/raw/Sample_ Superstore.csv")
     df_csv = leer_csv(ruta_csv)
     df_sql = leer_mysql()
 
@@ -87,9 +87,8 @@ def ejecutar_pipeline():
     # ----------------------------------------------------
     print(">>> FASE 3: Guardando en disco y cargando a MySQL...")
     
-    ruta_procesado = "data/processed/clean_superstore_feriados.csv"
-    
     # 3.1 Guardar copia física en data/processed
+    ruta_procesado = os.path.join(ruta_raiz, "data/processed/clean_superstore_feriados.csv")
     try:
         os.makedirs(os.path.dirname(ruta_procesado), exist_ok=True)
         df_final.to_csv(ruta_procesado, index=False, encoding="utf-8")
