@@ -2,17 +2,9 @@ version: '3.8'
 
 services:
 
-
-  db:
-    image: mysql:8.0
-
-    container_name: mysql_superstore
-
-
   db:
     image: mysql:8.0
     container_name: mysql_superstore
-
     restart: always
 
     environment:
@@ -25,16 +17,11 @@ services:
     volumes:
       - type: bind
         source: ./data/database/init.sql
-
         target: /docker-entrypoint-initdb.d/init.sql
 
-
   dashboard:
-
     build: .
-
     container_name: dashboard_superstore
-
     restart: always
 
     ports:
@@ -45,6 +32,3 @@ services:
 
     env_file:
       - .env
-
-        target: /docker-entrypoint-initdb.d/init.sql
->>>>>>
