@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+
+  db:
+    image: mysql:8.0
+
+    container_name: mysql_superstore
+
+    restart: always
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: superstore_feriados_db
+
+    ports:
+      - "3307:3306"
+
+    volumes:
+      - type: bind
+        source: ./data/database/init.sql
+        target: /docker-entrypoint-initdb.d/init.sql
+
+
+  dashboard:
+
+    build: .
+
+    container_name: dashboard_superstore
+
+    restart: always
+
+    ports:
+      - "8501:8501"
+
+    depends_on:
+      - db
+
+    env_file:
+      - .env

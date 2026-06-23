@@ -1,0 +1,7 @@
+pandas
+streamlit
+requests
+mysql-connector-python
+numpy
+plotly
+sqlalchemy
