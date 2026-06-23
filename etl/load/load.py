@@ -1,8 +1,18 @@
 from sqlalchemy import create_engine
+
 import os
 
 
+# =====================================================
+# REVISAR CARGA
+# =====================================================
+
 def revisar_carga(df):
+    """
+    Muestra información del DataFrame que será cargado.
+    """
+
+
     print("\n===== DATASET A CARGAR =====")
 
     print("\nPrimeras filas:")
@@ -13,6 +23,7 @@ def revisar_carga(df):
 
     print("\nCantidad de columnas:")
     print(df.shape[1])
+
 
 
 def cargar_mysql(df):
@@ -34,7 +45,9 @@ def cargar_mysql(df):
         )
 
         print("\nDatos cargados correctamente en MySQL.")
-        print("Tabla destino: dw_superstore_c")
+
+        print("Tabla destino:superstore_feriados_db")
+
 
     except Exception as e:
         print(f"\nError durante la carga: {e}")

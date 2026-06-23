@@ -1,5 +1,7 @@
 import pandas as pd
+
 import os
+
 from sqlalchemy import create_engine
 
 
@@ -12,9 +14,14 @@ def leer_mysql():
     try:
         ruta_conexion = (
             "mysql+mysqlconnector://"
+
             f"{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}"
             f"@{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/"
             f"{os.getenv('MYSQL_DATABASE')}"
+
+            "root:root_password@localhost:3307/"
+            "superstore_feriados_db"
+
         )
 
         engine = create_engine(ruta_conexion)
