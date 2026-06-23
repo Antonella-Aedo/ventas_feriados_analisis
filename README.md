@@ -180,7 +180,7 @@ MYSQL_PASSWORD=root_password
 ### Clonar repositorio
 
 ```bash
-git clone <url-del-repositorio>
+git clone https://github.com/Antonella-Aedo/ventas_feriados_analisis.git
 ```
 
 ### Acceder al proyecto
