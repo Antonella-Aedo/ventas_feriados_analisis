@@ -151,14 +151,38 @@ def crear_variables(df):
     df["Mes"] = df["Order Date"].dt.month
     df["Dia_Semana"] = df["Order Date"].dt.day_name()
 
-    # Define el estado de la meta que espera tu Data Warehouse final en MySQL
-    df["estado_meta"] = df.apply(
-        lambda row: "Cumple Meta Regional" if row["Sales"] >= row["meta_ventas"] else "Venta Regular", 
-        axis=1
+    # =====================================================
+    # CALCULAR CUMPLIMIENTO DE META MENSUAL POR REGIÓN
+    # =====================================================
+
+    ventas_region = (
+        df.groupby(["Region", "Año", "Mes"], as_index=False)["Sales"]
+          .sum()
+          .rename(columns={"Sales": "Ventas_Mensuales"})
     )
-    
-    # Campo auxiliar booleano de control interno
-    df["Cumple_Meta"] = (df["Sales"] >= df["meta_ventas"]).astype(int)
+
+    ventas_region = ventas_region.merge(
+        df.groupby("Region", as_index=False)["meta_ventas"].first(),
+        on="Region",
+        how="left"
+    )
+
+    ventas_region["Cumple_Meta"] = (
+        ventas_region["Ventas_Mensuales"] >= ventas_region["meta_ventas"]
+    ).astype(int)
+
+    ventas_region["estado_meta"] = ventas_region["Cumple_Meta"].map({
+        1: "Cumple Meta Regional",
+        0: "Venta Regular"
+    })
+
+    df = df.merge(
+        ventas_region[
+            ["Region", "Año", "Mes", "Cumple_Meta", "estado_meta"]
+        ],
+        on=["Region", "Año", "Mes"],
+        how="left"
+    )
 
     return df
 
