@@ -18,12 +18,14 @@ CREATE TABLE IF NOT EXISTS metas_ventas (
     meta_ventas DECIMAL(12,2) NOT NULL
 );
 
+DELETE FROM metas_ventas;
+
 INSERT INTO metas_ventas (region, meta_ventas)
 VALUES
-('West', 50000),
-('East', 45000),
-('South', 30000),
-('Central', 40000);
+('Central', 8883.71),
+('East', 9847.34),
+('South', 6850.16),
+('West', 14007.73);
 
 
 -- 2. TABLA: DATA WAREHOUSE FINAL (dw_superstore_climate)
