@@ -1,71 +1,125 @@
 import joblib
 import pandas as pd
-'''
-Se desarrolló un script para cargar el modelo almacenado en formato .pkl y realizar predicciones sobre nuevos registros. Esto permitió verificar que el modelo entrenado puede reutilizarse sin necesidad de volver a entrenarlo, facilitando su integración con el dashboard desarrollado en Streamlit.
 
-'''
-# ======================================================
-# CARGAR MODELO
-# ======================================================
+"""
+Prueba de funcionamiento de los modelos de Machine Learning.
 
-modelo = joblib.load("data/models/decision_tree.pkl")
-columnas = joblib.load("data/models/decision_tree_columns.pkl")
-
-print("Modelo cargado correctamente.")
+Este script verifica que los modelos almacenados en formato .pkl
+pueden cargarse correctamente y realizar predicciones sobre nuevos
+registros sin necesidad de volver a entrenarlos.
+"""
 
 # ======================================================
-# CARGAR DATOS
+# CARGAR Y PREPARAR DATOS
 # ======================================================
 
-df = pd.read_csv("data/processed/clean_superstore_feriados.csv")
+def preparar_datos(columnas_modelo):
+    """
+    Carga el dataset y aplica el mismo preprocesamiento
+    utilizado durante el entrenamiento.
+    """
 
-# Tomar un registro como ejemplo
-nuevo = df.iloc[[0]]
+    df = pd.read_csv("data/processed/clean_superstore_feriados.csv")
 
-X = nuevo[[
-    "Sales",
-    "Profit",
-    "Discount",
-    "Quantity",
-    "Region",
-    "Category",
-    "Sub-Category",
-    "Segment",
-    "Ship Mode",
-    "Es_Feriado",
-    "Mes",
-    "Dia_Semana"
-]]
+    nuevo = df.iloc[[0]]
+
+    X = nuevo[columnas_modelo].copy()
+
+    columnas_categoricas = [
+        c for c in [
+            "Region",
+            "Category",
+            "Sub-Category",
+            "Segment",
+            "Ship Mode",
+            "Dia_Semana"
+        ] if c in X.columns
+    ]
+
+    if columnas_categoricas:
+        X = pd.get_dummies(
+            X,
+            columns=columnas_categoricas,
+            drop_first=True
+        )
+
+    return X
+
 
 # ======================================================
-# MISMO PREPROCESAMIENTO DEL ENTRENAMIENTO
+# TEST ÁRBOL DE DECISIÓN
 # ======================================================
 
-X = pd.get_dummies(
-    X,
-    columns=[
+def test_decision_tree():
+
+    print("\n==============================")
+    print("TEST DECISION TREE")
+    print("==============================")
+
+    modelo = joblib.load("data/models/decision_tree.pkl")
+    columnas = joblib.load("data/models/decision_tree_columns.pkl")
+
+    X = preparar_datos([
+        "Sales",
+        "Profit",
+        "Discount",
+        "Quantity",
         "Region",
         "Category",
         "Sub-Category",
         "Segment",
         "Ship Mode",
+        "Es_Feriado",
+        "Mes",
         "Dia_Semana"
-    ],
-    drop_first=True
-)
+    ])
 
-# Agregar columnas faltantes
-X = X.reindex(columns=columnas, fill_value=0)
+    X = X.reindex(columns=columnas, fill_value=0)
+
+    pred = modelo.predict(X)
+
+    print("Predicción:", pred[0])
+
+    if pred[0] == 1:
+        print("Resultado: Cumple Meta Regional")
+    else:
+        print("Resultado: Venta Regular")
+
 
 # ======================================================
-# PREDICCIÓN
+# TEST K-MEANS
 # ======================================================
 
-pred = modelo.predict(X)
+def test_kmeans():
 
-print("Predicción:", pred[0])
+    print("\n==============================")
+    print("TEST K-MEANS")
+    print("==============================")
 
-if pred[0] == 1:
-    print("Resultado: Cumple Meta Regional")
-else:
-    print("Resultado: Venta Regular")
+    modelo = joblib.load("data/models/kmeans.pkl")
+
+    X = preparar_datos([
+        "Sales",
+        "Quantity",
+        "Discount",
+        "Profit"
+    ])
+
+    # El Pipeline ya contiene StandardScaler + KMeans
+    cluster = modelo.predict(X)
+
+    print(f"Cluster asignado: {cluster[0]}")
+
+    assert len(cluster) == 1
+
+    print("Modelo funcionando correctamente.")
+
+
+# ======================================================
+# EJECUCIÓN
+# ======================================================
+
+if __name__ == "__main__":
+
+    test_decision_tree()
+    test_kmeans()
