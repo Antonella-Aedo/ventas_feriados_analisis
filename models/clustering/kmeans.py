@@ -163,8 +163,8 @@ def buscar_mejor_k(datos: pd.DataFrame) -> tuple[int, float]:
     """
     Prueba diferentes cantidades de clusters entre 2 y 6.
 
-    Selecciona el valor de k que obtenga el mejor
-    Silhouette Score.
+    Para evitar tiempos de ejecución demasiado largos, utiliza una
+    muestra representativa del dataset para seleccionar el mejor k.
 
     Args:
         datos: Variables numéricas preparadas.
@@ -173,13 +173,26 @@ def buscar_mejor_k(datos: pd.DataFrame) -> tuple[int, float]:
         Tupla con el mejor número de clusters y su puntuación.
     """
 
-    # Estandariza los datos antes de evaluar diferentes valores de k.
+    # Se utiliza una muestra para acelerar la búsqueda del mejor k.
+    # El modelo final se entrenará posteriormente con todos los registros.
+    cantidad_muestra = min(2000, len(datos))
+
+    datos_muestra = datos.sample(
+        n=cantidad_muestra,
+        random_state=42
+    )
+
     scaler = StandardScaler()
 
-    datos_escalados = scaler.fit_transform(datos)
+    datos_escalados = scaler.fit_transform(datos_muestra)
 
     mejor_k = 2
     mejor_puntuacion = -1.0
+
+    print(
+        f"\nBuscando el mejor k con una muestra de "
+        f"{cantidad_muestra} registros."
+    )
 
     print("\nEvaluación de diferentes cantidades de clusters:")
 
@@ -195,7 +208,9 @@ def buscar_mejor_k(datos: pd.DataFrame) -> tuple[int, float]:
 
         puntuacion = silhouette_score(
             datos_escalados,
-            etiquetas
+            etiquetas,
+            sample_size=min(500, cantidad_muestra),
+            random_state=42
         )
 
         print(
@@ -207,9 +222,7 @@ def buscar_mejor_k(datos: pd.DataFrame) -> tuple[int, float]:
             mejor_puntuacion = puntuacion
             mejor_k = k
 
-    print(
-        f"\nMejor cantidad de clusters: {mejor_k}"
-    )
+    print(f"\nMejor cantidad de clusters: {mejor_k}")
 
     print(
         f"Mejor Silhouette Score: "
