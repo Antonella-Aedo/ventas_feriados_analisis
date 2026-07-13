@@ -129,3 +129,33 @@ C:.
 ### Visualización
 
 Dashboard interactivo desarrollado con Streamlit.
+
+---
+
+# Arquitectura de Machine Learning
+
+El proyecto incorpora una capa de Machine Learning ubicada en la carpeta:
+
+```text
+models/
+```
+
+La estructura se divide en tres módulos:
+
+```text
+models/
+├── classification/
+│   └── decision_tree.py
+├── regression/
+│   └── linear_regression.py
+└── clustering/
+    └── kmeans.py
+```
+
+Cada modelo procesa el dataset consolidado generado por el pipeline ETL y almacena el modelo entrenado en:
+
+```text
+data/models/
+```
+
+Los archivos `.pkl` son posteriormente cargados por el dashboard para realizar análisis, predicciones y segmentaciones sin necesidad de volver a entrenar los modelos.

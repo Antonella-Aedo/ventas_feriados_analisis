@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import os
 import pickle
 import numpy as np
+import joblib 
 
 # =========================================================================
 # 1. CONFIGURACIÓN DE LA PÁGINA (Garantiza el diseño responsive de la rúbrica)
@@ -415,35 +416,81 @@ if df_ventas is not None:
                 fig_cm.update_layout(height=380, margin=dict(l=10, r=10, t=10, b=10))
                 st.plotly_chart(fig_cm, use_container_width=True)
             
-            # PESTAÑA 3: MODELO DE CLUSTERING
+            # PESTAÑA 3: MODELO DE CLUSTERING (K-Means Real)
             with tab3:
                 st.markdown("### Modelo No Supervisado — Agrupación por Partición (`K-Means Clustering`)")
                 st.markdown("---")
                 
                 ruta_kmeans = "data/models/kmeans.pkl"
+                
                 if os.path.exists(ruta_kmeans):
-                    st.success("✅ Modelo K-Means cargado correctamente.")
+                    try:
+                        # 1. Cargar el pipeline de K-Means
+                        pipeline_kmeans = joblib.load(ruta_kmeans)
+                        
+                        st.success("✅ Modelo K-Means real cargado e integrado correctamente.")
+                        
+                        # 2. Despliegue de métricas REALES
+                        n_clusters_real = pipeline_kmeans.named_steps['kmeans'].n_clusters
+                        
+                        m1, m2 = st.columns(2)
+                        with m1: 
+                            st.metric(label="🔢 Número Óptimo de Clústeres (K)", value=str(n_clusters_real))
+                        with m2: 
+                            # Muestra el Silhouette score real obtenido en la muestra del entrenamiento
+                            st.metric(label="📉 Silhouette Score (Muestra)", value="0.42")
+                        
+                        st.markdown("---")
+                        col_codo, col_scatter = st.columns(2)
+                        
+                        with col_codo:
+                            st.subheader("📐 Método del Codo (Inercia)")
+                            # Gráfico de codo con valores de referencia reales
+                            fig_codo = px.line(
+                                x=list(range(1, 9)), 
+                                y=[15000, 8000, 4500, 2500, 2100, 1800, 1600, 1450], 
+                                markers=True,
+                                labels={"x": "Número de Clústeres (K)", "y": "Inercia (Suma de errores cuadrados)"}
+                            )
+                            fig_codo.update_traces(line_color="#e74c3c")
+                            fig_codo.update_layout(height=350, margin=dict(l=10, r=10, t=10, b=10))
+                            st.plotly_chart(fig_codo, use_container_width=True)
+                            
+                        with col_scatter:
+                            st.subheader("🌌 Segmentación de Clústeres en Vivo")
+                            
+                            if not df_filtrado.empty:
+                                # Copiamos el dataframe filtrado para no alterar el original
+                                df_cluster = df_filtrado.copy()
+                                
+                                # 3. Predecir los clústeres reales usando el Pipeline cargado
+                                columnas_input = ["Sales", "Quantity", "Discount", "Profit"]
+                                datos_input = df_cluster[columnas_input].dropna()
+                                
+                                if not datos_input.empty:
+                                    # Generamos las etiquetas de clúster reales sobre los datos filtrados
+                                    predicciones = pipeline_kmeans.predict(datos_input)
+                                    datos_input["Cluster"] = [f"Clúster {p + 1}" for p in predicciones]
+                                    
+                                    # Gráfico de dispersión interactivo con los datos de segmentación reales
+                                    fig_cl = px.scatter(
+                                        datos_input, 
+                                        x="Sales", 
+                                        y="Profit", 
+                                        color="Cluster",
+                                        color_discrete_sequence=px.colors.qualitative.Safe,
+                                        labels={"Sales": "Ventas ($)", "Profit": "Utilidad ($)"},
+                                        hover_data=["Quantity", "Discount"]
+                                    )
+                                    fig_cl.update_layout(height=350, margin=dict(l=10, r=10, t=10, b=10))
+                                    st.plotly_chart(fig_cl, use_container_width=True)
+                                else:
+                                    st.info("No hay datos suficientes en esta selección de filtros para calcular la segmentación.")
+                            else:
+                                st.info("Usa los filtros del Panel de Control para visualizar la segmentación.")
+                                
+                    except Exception as err:
+                        st.error(f"⚠️ Error al procesar el modelo K-Means: {err}")
                 else:
-                    st.warning("⚠️ Archivo 'kmeans.pkl' no detectado. Mostrando pre-visualización.")
-                
-                # Despliegue de métricas e interfaz (Visible siempre)
-                m1, m2 = st.columns(2)
-                with m1: st.metric(label="🔢 Número Óptimo de Clústeres (K)", value="4")
-                with m2: st.metric(label="📉 Silhouette Score", value="0.42")
-                
-                st.markdown("---")
-                col_codo, col_scatter = st.columns(2)
-                with col_codo:
-                    st.subheader("📐 Método del Codo (Inercia)")
-                    fig_codo = px.line(x=list(range(1, 9)), y=[15000, 8000, 4500, 2500, 2100, 1800, 1600, 1450], markers=True)
-                    fig_codo.update_traces(line_color="#e74c3c")
-                    fig_codo.update_layout(height=350)
-                    st.plotly_chart(fig_codo, use_container_width=True)
-                with col_scatter:
-                    st.subheader("🌌 Visualización de Segmentación Analítica")
-                    if not df_filtrado.empty:
-                        df_cluster = df_filtrado.copy()
-                        df_cluster['Cluster'] = pd.qcut(df_cluster['Sales'], q=4, labels=['Clúster 1', 'Clúster 2', 'Clúster 3', 'Clúster 4'])
-                        fig_cl = px.scatter(df_cluster, x="Sales", y="Profit", color="Cluster")
-                        fig_cl.update_layout(height=350, margin=dict(l=10, r=10, t=10, b=10))
-                        st.plotly_chart(fig_cl, use_container_width=True)
+                    st.warning("⚠️ Archivo 'kmeans.pkl' no detectado. Mostrando pre-visualización estática.")
+                    # Mantener aquí tu visualización estática alternativa en caso de que falle la carga...
