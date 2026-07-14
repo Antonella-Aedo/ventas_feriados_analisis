@@ -5,3 +5,6 @@ mysql-connector-python
 numpy
 plotly
 sqlalchemy
+scikit-learn
+joblib
+pytest

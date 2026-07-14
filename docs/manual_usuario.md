@@ -53,3 +53,23 @@ Permite visualizar:
 * Año
 
 Los filtros se encuentran en la barra lateral izquierda.
+
+---
+
+# Uso de los modelos de Machine Learning
+
+El dashboard incorpora modelos de Machine Learning previamente entrenados.
+
+Estos modelos permiten:
+
+- Clasificar registros mediante Decision Tree.
+- Estimar tendencias utilizando Regresión Lineal.
+- Agrupar registros similares mediante K-Means.
+
+Los modelos son cargados automáticamente desde:
+
+```text
+data/models/
+```
+
+Por lo tanto, el usuario no necesita volver a entrenarlos para utilizar el sistema.
